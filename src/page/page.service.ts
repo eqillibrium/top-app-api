@@ -23,6 +23,10 @@ export class PageService {
         return this.pageModel.find({ firstCategory }, { alias: 1, secondCategory: 1, title: 1 }).exec()
     }
 
+    async findByText(text: string) {
+        return this.pageModel.find({ $text: { $search: text, $caseSensitive: false } }).exec()
+    }
+
     async deleteByID (id: string) {
         return this.pageModel.findByIdAndRemove(id).exec()
     }
