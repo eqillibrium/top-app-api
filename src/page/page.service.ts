@@ -2,10 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { LevelCategory, PageModel } from './page.model';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { CreatePageDto } from './dto/created-page.dto';
+import { InjectModel } from 'nestjs-typegoose';
 
 @Injectable()
 export class PageService {
-    constructor(@Inject(PageModel) private readonly pageModel: ModelType<PageModel>) {}
+    constructor(@InjectModel(PageModel) private readonly pageModel: ModelType<PageModel>) {}
 
     async create(dto: CreatePageDto) {
         return this.pageModel.create(dto)
@@ -20,7 +21,23 @@ export class PageService {
     }
 
     async findByCategory(firstCategory: LevelCategory) {
-        return this.pageModel.find({ firstCategory }, { alias: 1, secondCategory: 1, title: 1 }).exec()
+        return this.pageModel
+            .aggregate()
+            .match({
+                firstCategory
+            })
+            .group({
+                _id: {
+                    secondCategory: '$secondCategory'
+                },
+                pages: {
+                    $push: {
+                        alias: '$alias',
+                        title: '$title'
+                    }
+                }
+            })
+            .exec()
     }
 
     async findByText(text: string) {
